@@ -10,10 +10,6 @@ python -m http.server 4173
 
 Open `http://127.0.0.1:4173/`.
 
-## Deployment note
-
-The site is Vercel-compatible (`vercel.json` included), but **Vercel Hobby is not eligible**: the Vercel Terms of Service (§4) restrict Hobby to personal, non-commercial use, and this is a business site. Deploy on Vercel Pro or another host that permits commercial use. No deployment, DNS or account changes have been made.
-
 ## Content notes
 
 - Service names come from the supplied `Crystal price list.pdf`. The menu lists service names and category headings only: PDF variant/duration qualifiers (lengths, hands/feet, timings) and the pigmentation touch-up note are deliberately omitted. No prices appear anywhere.
