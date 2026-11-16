@@ -1,0 +1,10 @@
+Github PAT.txt
+.env
+.env.*
+.git/
+.vercel/
+node_modules/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
