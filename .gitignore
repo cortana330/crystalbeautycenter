@@ -1,0 +1,14 @@
+# Local secrets (never commit)
+/Github PAT.txt
+.env
+.env.*
+
+# OS / editor artifacts
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+
+# Tooling
+node_modules/
+.vercel/
