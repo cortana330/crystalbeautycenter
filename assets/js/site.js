@@ -21,23 +21,67 @@
   const mobileMenu = document.querySelector("[data-mobile-menu]");
 
   if (menuToggle && mobileMenu) {
+    const menuLabel = menuToggle.querySelector(".menu-toggle__label");
+    const isOpen = () => menuToggle.getAttribute("aria-expanded") === "true";
+    const isVisible = (node) => Boolean(node.offsetWidth || node.offsetHeight || node.getClientRects().length);
+
+    /* Everything outside the menu (and its toggle) is inert while it is open. */
+    const backgroundNodes = [
+      document.querySelector("main"),
+      document.querySelector("footer"),
+      document.querySelector(".skip-link"),
+      document.querySelector(".site-header .brand"),
+      document.querySelector(".primary-nav"),
+      document.querySelector(".header-actions .btn"),
+    ].filter(Boolean);
+
+    const setBackgroundInert = (isInert) => {
+      backgroundNodes.forEach((node) => {
+        if (isInert) {
+          node.setAttribute("inert", "");
+          node.setAttribute("aria-hidden", "true");
+        } else {
+          node.removeAttribute("inert");
+          node.removeAttribute("aria-hidden");
+        }
+      });
+    };
+
+    const menuFocusables = () => {
+      const inside = Array.from(
+        mobileMenu.querySelectorAll(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      return [menuToggle, ...inside].filter(isVisible);
+    };
+
+    const setLabel = (open) => {
+      if (menuLabel) menuLabel.textContent = open ? "Close menu" : "Menu";
+    };
+
     const openMenu = () => {
       mobileMenu.hidden = false;
       menuToggle.setAttribute("aria-expanded", "true");
       document.body.classList.add("nav-open");
+      setBackgroundInert(true);
+      setLabel(true);
       const firstLink = mobileMenu.querySelector("a");
       if (firstLink) firstLink.focus({ preventScroll: true });
     };
 
     const closeMenu = ({ restoreFocus = false } = {}) => {
+      if (mobileMenu.hidden) return;
       mobileMenu.hidden = true;
       menuToggle.setAttribute("aria-expanded", "false");
       document.body.classList.remove("nav-open");
+      setBackgroundInert(false);
+      setLabel(false);
       if (restoreFocus) menuToggle.focus({ preventScroll: true });
     };
 
     menuToggle.addEventListener("click", () => {
-      if (menuToggle.getAttribute("aria-expanded") === "true") {
+      if (isOpen()) {
         closeMenu({ restoreFocus: true });
       } else {
         openMenu();
@@ -45,18 +89,45 @@
     });
 
     mobileMenu.querySelectorAll("a").forEach((link) => {
-      link.addEventListener("click", () => closeMenu());
+      link.addEventListener("click", () => closeMenu({ restoreFocus: true }));
     });
 
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && menuToggle.getAttribute("aria-expanded") === "true") {
+      if (!isOpen()) return;
+
+      if (event.key === "Escape") {
+        event.preventDefault();
         closeMenu({ restoreFocus: true });
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const items = menuFocusables();
+      if (!items.length) return;
+
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+
+      if (!items.includes(active)) {
+        event.preventDefault();
+        first.focus();
+        return;
+      }
+
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
       }
     });
 
     window.addEventListener("resize", () => {
-      if (window.innerWidth > 1000 && menuToggle.getAttribute("aria-expanded") === "true") {
-        closeMenu();
+      if (window.innerWidth > 1000 && isOpen()) {
+        closeMenu({ restoreFocus: true });
       }
     });
   }
@@ -70,8 +141,24 @@
   if (tabsRoot) {
     const tabs = Array.from(tabsRoot.querySelectorAll('[role="tab"]'));
     const panels = Array.from(tabsRoot.querySelectorAll('[role="tabpanel"]'));
+    const status = tabsRoot.querySelector("[data-tab-status]");
 
-    const activateTab = (tab, { focusTab = false, announce = false } = {}) => {
+    const tabSlug = (tab) => tab.id.replace(/^tab-/, "");
+
+    const writeHash = (tab) => {
+      const slug = tabSlug(tab);
+      if (!slug) return;
+      const url = new URL(window.location.href);
+      if (url.hash === `#${slug}`) return;
+      url.hash = slug;
+      try {
+        window.history.replaceState(null, "", url);
+      } catch (error) {
+        /* Some embedded/webview contexts disallow history writes. */
+      }
+    };
+
+    const activateTab = (tab, { focusTab = false, announce = false, updateHash = false, scrollTab = false } = {}) => {
       tabs.forEach((item) => {
         const selected = item === tab;
         item.setAttribute("aria-selected", String(selected));
@@ -82,9 +169,17 @@
         panel.hidden = panel.id !== tab.getAttribute("aria-controls");
       });
 
+      if (updateHash) writeHash(tab);
       if (focusTab) tab.focus({ preventScroll: true });
-      if (announce) {
-        tab.scrollIntoView({ block: "nearest", inline: "center", behavior: reduceMotion ? "auto" : "smooth" });
+      if (scrollTab) {
+        tab.scrollIntoView({
+          block: "nearest",
+          inline: "center",
+          behavior: reduceMotion ? "auto" : "smooth",
+        });
+      }
+      if (announce && status) {
+        status.textContent = `${tab.textContent.trim()} services shown.`;
       }
     };
 
@@ -94,7 +189,7 @@
     };
 
     tabs.forEach((tab) => {
-      tab.addEventListener("click", () => activateTab(tab));
+      tab.addEventListener("click", () => activateTab(tab, { announce: true, updateHash: true }));
       tab.addEventListener("keydown", (event) => {
         const index = tabs.indexOf(tab);
         let next = null;
@@ -105,7 +200,7 @@
 
         if (next) {
           event.preventDefault();
-          activateTab(next, { focusTab: true });
+          activateTab(next, { focusTab: true, scrollTab: true, announce: true, updateHash: true });
         }
       });
     });
@@ -114,7 +209,7 @@
       trigger.addEventListener("click", () => {
         const target = document.getElementById(`tab-${trigger.dataset.openTab}`);
         if (!target) return;
-        activateTab(target, { announce: true });
+        activateTab(target, { announce: true, updateHash: true, scrollTab: true });
 
         const services = document.getElementById("services");
         if (services) {
@@ -122,6 +217,13 @@
         }
         window.setTimeout(() => target.focus({ preventScroll: true }), reduceMotion ? 0 : 420);
       });
+    });
+
+    window.addEventListener("hashchange", () => {
+      const tab = tabFromHash();
+      if (tab && tab.getAttribute("aria-selected") !== "true") {
+        activateTab(tab, { announce: true, scrollTab: true });
+      }
     });
 
     const initialTab = tabFromHash();

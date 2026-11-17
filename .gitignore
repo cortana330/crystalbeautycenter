@@ -12,3 +12,6 @@ desktop.ini
 # Tooling
 node_modules/
 .vercel/
+
+# Local DNS/domain verification scratch files (contain signed URLs)
+wwwverify*.json
