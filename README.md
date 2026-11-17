@@ -36,7 +36,7 @@ Open `http://127.0.0.1:4173/`.
 ## Content notes
 
 - Service names come from the supplied `Crystal price list.pdf`. The menu lists service names and category headings only: PDF variant/duration qualifiers (lengths, hands/feet, timings) and the pigmentation touch-up note are deliberately omitted. No prices appear anywhere.
-- Branch details were integrated from verified research: Al Khuwair, Building 317, Al Maha Street, Al Khuwair 33 (`+968 2448 3637`) and Al Mouj, The Walk, 1st floor (`+968 2454 3343`). Al Mouj hours are omitted because sources conflict; Al Khuwair shows the consistently listed daily 09:00–21:00 hours.
+- Branch details were integrated from verified research: Al Khuwair, Building 317, Al Maha Street, Al Khuwair 33 (`+968 2448 3637`) and Al Mouj, The Walk, 1st floor (`+968 2454 3343`). Both branches show daily 09:00–21:00 hours, in the cards and in the JSON-LD `openingHoursSpecification`.
 - Bookings route to Instagram and the two verified branch phone numbers.
 - Photos and logo are copied and optimised from the supplied `CRYSTAL-WEBSITE` folder. The source folder is untouched.
 
